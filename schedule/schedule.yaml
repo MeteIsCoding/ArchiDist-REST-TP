@@ -1,0 +1,147 @@
+openapi: 3.0.3
+
+info:
+  title: Schedule Service API
+  description: API for miovie schedules
+  version: "1.0.0"
+
+servers:
+  - url: http://localhost:3202
+
+paths:
+
+  /:
+    get:
+      summary: Home page
+      responses:
+        "200":
+          description: Hello
+
+  /json:
+    get:
+      summary: Get all schedules
+      responses:
+        "200":
+          description: List of all schedules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Schedule"
+
+  /schedule/{date}:
+    get:
+      summary: Get schedule for a date
+      parameters:
+        - $ref: "#/components/parameters/Date"
+      responses:
+        "200":
+          description: Schedule found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+        "404":
+          description: Date not found
+
+    post:
+      summary: Add new schedule
+      parameters:
+        - $ref: "#/components/parameters/Date"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                movies:
+                  type: array
+                  items:
+                    type: string
+              example:
+                movies:
+                  - "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+                  - "7daf7208-be4d-4944-a3ae-c1c2f516f3e6"
+      responses:
+        "201":
+          description: Schedule added
+        "409":
+          description: Date already exists
+
+    delete:
+      summary: Delete schedule
+      parameters:
+        - $ref: "#/components/parameters/Date"
+      responses:
+        "200":
+          description: Schedule deleted
+        "404":
+          description: Date not found
+
+  /schedule/{date}/details:
+    get:
+      summary: Get schedule with movie details
+      parameters:
+        - $ref: "#/components/parameters/Date"
+      responses:
+        "200":
+          description: Schedule with movie information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  date:
+                    type: string
+                  movies:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Movie"
+        "404":
+          description: Date not found
+
+components:
+
+  parameters:
+    Date:
+      name: date
+      in: path
+      required: true
+      description: Schedule date
+      schema:
+        type: string
+        example: "20151201"
+
+  schemas:
+
+    Schedule:
+      type: object
+      properties:
+        date:
+          type: string
+          example: "20151201"
+        movies:
+          type: array
+          items:
+            type: string
+          example:
+            - "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+            - "7daf7208-be4d-4944-a3ae-c1c2f516f3e6"
+
+    Movie:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+        title:
+          type: string
+          example: "The Office"
+        rating:
+          type: number
+          example: 8.8
+        director:
+          type: string
+          example: "euuuuuh jsp"
