@@ -1,0 +1,176 @@
+openapi: 3.0.3
+
+info:
+  title: Booking Service API
+  description: API for boooooookings
+  version: "1.0.0"
+
+servers:
+  - url: http://localhost:3201
+
+paths:
+
+  /:
+    get:
+      summary: Home page
+      responses:
+        "200":
+          description: Welcome message
+
+  /bookings/{userid}:
+    get:
+      summary: Get bookings for one user
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User bookings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "404":
+          description: User not found
+
+    post:
+      summary: Add a booking
+      description: Checks schedule service before adding booking
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - date
+                - movieid
+              properties:
+                date:
+                  type: string
+                  example: "20151201"
+                movieid:
+                  type: string
+                  example: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6"
+      responses:
+        "200":
+          description: Booking added
+        "400":
+          description: Movie not scheduled
+        "404":
+          description: Date not found
+
+  /bookings/{userid}/{date}/{movieid}:
+    delete:
+      summary: Delete a booking
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/Date"
+        - $ref: "#/components/parameters/MovieId"
+      responses:
+        "200":
+          description: Booking deleted
+        "404":
+          description: Booking not found
+
+  /bookings/{userid}/details:
+    get:
+      summary: Get bookings with movie details
+      description: Uses movie service to get info about each booked movie
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Bookings with movie infos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userid:
+                    type: string
+                  dates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        movies:
+                          type: array
+                          items:
+                            $ref: "#/components/schemas/Movie"
+        "404":
+          description: User not found
+
+components:
+
+  parameters:
+
+    UserId:
+      name: userid
+      in: path
+      required: true
+      description: User identifier
+      schema:
+        type: string
+        example: "dwight_schrute"
+
+    Date:
+      name: date
+      in: path
+      required: true
+      description: Booking date
+      schema:
+        type: string
+        example: "20151205"
+
+    MovieId:
+      name: movieid
+      in: path
+      required: true
+      description: Movie identifier
+      schema:
+        type: string
+        example: "a8034f44-aee4-44cf-b32c-74cf452aaaae"
+
+  schemas:
+
+    Booking:
+      type: object
+      properties:
+        userid:
+          type: string
+          example: "dwight_schrute"
+          # BEARS. BEETS. BATTLESTAR GALACTICA.
+        dates:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                example: "20151205"
+              movies:
+                type: array
+                items:
+                  type: string
+                example:
+                  - "a8034f44-aee4-44cf-b32c-74cf452aaaae"
+
+    Movie:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "a8034f44-aee4-44cf-b32c-74cf452aaaae"
+        title:
+          type: string
+          example: "Project Hail Mary"
+        rating:
+          type: number
+          example: 8.2
+        director:
+          type: string
+          example: "Linus Torvalds"
