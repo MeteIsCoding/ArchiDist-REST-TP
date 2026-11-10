@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, make_response
+import requests
 import json
 import sys
 from werkzeug.exceptions import NotFound
@@ -7,6 +8,8 @@ app = Flask(__name__)
 
 PORT = 3200
 HOST = '0.0.0.0'
+
+USER_URL = "http://localhost:3203"
 
 with open('{}/databases/movies.json'.format("."), 'r') as jsf:
     movies = json.load(jsf)["movies"]
@@ -17,6 +20,13 @@ def write(movies):
         full = {}
         full['movies']=movies
         json.dump(full, f)
+
+#### vérifie auprès du service User que celui qui fait la requête est admin ####
+
+def is_admin():
+    admin = request.args.get("admin", "")
+    res = requests.get(USER_URL + "/users/" + admin)
+    return res.status_code == 200 and res.json()["admin"]
 
 # root message
 @app.route("/", methods=['GET'])
@@ -57,10 +67,13 @@ def get_movie_bytitle():
         res = make_response(jsonify(json),200)
     return res
 
-#### POST ajouter un nouveau film ####
+#### POST ajouter un nouveau film (admin) ####
 
 @app.route("/movies/<movieid>", methods=['POST'])
 def add_movie(movieid):
+    if not is_admin():
+        return make_response(jsonify({"error":"admin only"}),403)
+
     req = request.get_json()
 
     for movie in movies:
@@ -74,10 +87,13 @@ def add_movie(movieid):
     res = make_response(jsonify({"message":"movie added"}),200)
     return res
 
-#### PUT modifier la note d’un film ####
+#### PUT modifier la note d’un film (admin) ####
 
 @app.route("/movies/<movieid>/<rate>", methods=['PUT'])
 def update_movie_rating(movieid, rate):
+    if not is_admin():
+        return make_response(jsonify({"error":"admin only"}),403)
+
     for movie in movies:
         if str(movie["id"]) == str(movieid):
             movie["rating"] = rate
@@ -88,10 +104,13 @@ def update_movie_rating(movieid, rate):
     res = make_response(jsonify({"error":"movie ID not found"}),500)
     return res
 
-#### DELETE un film ####
+#### DELETE un film (admin) ####
 
 @app.route("/movies/<movieid>", methods=['DELETE'])
 def del_movie(movieid):
+    if not is_admin():
+        return make_response(jsonify({"error":"admin only"}),403)
+
     for movie in movies:
         if str(movie["id"]) == str(movieid):
             movies.remove(movie)

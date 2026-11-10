@@ -1,0 +1,292 @@
+openapi: 3.0.3
+
+info:
+  title: User Service API
+  description: API for the users of the cinema. Admin calls need the id of an admin in the "admin" query parameter.
+  version: "1.0.0"
+
+servers:
+  - url: http://localhost:3203
+
+tags:
+  - name: admin
+    description: Admin only calls
+  - name: client
+    description: Calls available to every user
+
+paths:
+
+  /:
+    get:
+      tags:
+        - client
+      summary: Home page
+      responses:
+        "200":
+          description: Welcome message
+          content:
+            text/html:
+              schema:
+                type: string
+                example: "<h1 style='color:blue'>Welcome to the User service!</h1>"
+
+  /json:
+    get:
+      tags:
+        - admin
+      summary: Get all users
+      parameters:
+        - $ref: "#/components/parameters/AdminId"
+      responses:
+        "200":
+          description: List of all users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "403":
+          $ref: "#/components/responses/AdminOnly"
+
+  /users/{userid}:
+    get:
+      tags:
+        - client
+      summary: Get one user
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          $ref: "#/components/responses/UserNotFound"
+
+    post:
+      tags:
+        - admin
+      summary: Add a user
+      description: last_active is set to the current time
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/AdminId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: "Kevin Malone"
+                admin:
+                  type: boolean
+                  example: false
+      responses:
+        "201":
+          description: User added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Name missing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: name missing
+        "403":
+          $ref: "#/components/responses/AdminOnly"
+        "409":
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: user already exists
+
+    put:
+      tags:
+        - admin
+      summary: Update a user
+      description: Changes the name and/or the admin right of a user
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/AdminId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Dwight K. Schrute"
+                admin:
+                  type: boolean
+                  example: true
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "403":
+          $ref: "#/components/responses/AdminOnly"
+        "404":
+          $ref: "#/components/responses/UserNotFound"
+
+    delete:
+      tags:
+        - admin
+      summary: Delete a user
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/AdminId"
+      responses:
+        "200":
+          description: User deleted (returns the deleted user)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "403":
+          $ref: "#/components/responses/AdminOnly"
+        "404":
+          $ref: "#/components/responses/UserNotFound"
+
+  /users/{userid}/bookings:
+    get:
+      tags:
+        - client
+      summary: Get a user with the bookings and the movie details
+      description: Calls the booking service, which calls the movie service. The list is empty if the user has no booking.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User with bookings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserBookings"
+        "404":
+          $ref: "#/components/responses/UserNotFound"
+
+components:
+
+  parameters:
+
+    UserId:
+      name: userid
+      in: path
+      required: true
+      description: User identifier
+      schema:
+        type: string
+        example: "dwight_schrute"
+
+    AdminId:
+      name: admin
+      in: query
+      required: true
+      description: Id of the user who makes the request, must be an admin
+      schema:
+        type: string
+        example: "michael_scott"
+
+  responses:
+
+    AdminOnly:
+      description: The user who makes the request is not an admin
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: admin only
+
+    UserNotFound:
+      description: User not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: user not found
+
+  schemas:
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "dwight_schrute"
+        name:
+          type: string
+          example: "Dwight Schrute"
+        last_active:
+          type: integer
+          description: Timestamp of the last activity
+          example: 1360031202
+        admin:
+          type: boolean
+          example: false
+
+    UserBookings:
+      type: object
+      properties:
+        userid:
+          type: string
+          example: "dwight_schrute"
+        name:
+          type: string
+          example: "Dwight Schrute"
+        bookings:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                example: "20151201"
+              movies:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Movie"
+
+    Movie:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "7daf7208-be4d-4944-a3ae-c1c2f516f3e6"
+        title:
+          type: string
+          example: "Victor Frankenstein"
+        rating:
+          type: number
+          example: 6.4
+        director:
+          type: string
+          example: "Paul McGuigan"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "user not found"

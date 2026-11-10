@@ -8,6 +8,7 @@ PORT = 3202
 HOST = '0.0.0.0'
 
 MOVIE_URL = "http://localhost:3200"
+USER_URL = "http://localhost:3203"
 
 with open('./databases/times.json', 'r') as jsf:
     schedule = json.load(jsf)["schedule"]
@@ -16,6 +17,13 @@ with open('./databases/times.json', 'r') as jsf:
 def write():
     with open('./databases/times.json', 'w') as f:
         json.dump({"schedule": schedule}, f, indent=2)
+
+
+##### check with user service if the user who makes the request is admin #####
+def is_admin():
+    admin = request.args.get("admin", "")
+    res = requests.get(USER_URL + "/users/" + admin)
+    return res.status_code == 200 and res.json()["admin"]
 
 
 @app.route("/", methods=['GET'])
@@ -39,9 +47,12 @@ def get_schedule(date):
     return make_response(jsonify({"error": "date not found"}), 404)
 
 
-##### add date #####
+##### add date (admin) #####
 @app.route("/schedule/<date>", methods=['POST'])
 def add_schedule(date):
+    if not is_admin():
+        return make_response(jsonify({"error": "admin only"}), 403)
+
     req = request.get_json()
 
     if "movies" not in req:
@@ -62,9 +73,12 @@ def add_schedule(date):
     return make_response(jsonify(new_item), 201)
 
 
-##### delete date #####
+##### delete date (admin) #####
 @app.route("/schedule/<date>", methods=['DELETE'])
 def delete_schedule(date):
+    if not is_admin():
+        return make_response(jsonify({"error": "admin only"}), 403)
+
     for item in schedule:
         if item["date"] == date:
             schedule.remove(item)

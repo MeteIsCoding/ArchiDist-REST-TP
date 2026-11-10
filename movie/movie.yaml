@@ -77,6 +77,7 @@ paths:
       description: Adds a movie with the given ID, if it doesn't already exist.
       parameters:
         - $ref: "#/components/parameters/MovieId"
+        - $ref: "#/components/parameters/AdminId"
       requestBody:
         required: true
         content:
@@ -94,8 +95,34 @@ paths:
                   message:
                     type: string
                     example: movie added
+        "403":
+          $ref: "#/components/responses/AdminOnly"
         "500":
           description: Movie ID already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      tags:
+        - admin
+      summary: Delete a movie
+      description: Deletes the movie with the given ID and returns it.
+      parameters:
+        - $ref: "#/components/parameters/MovieId"
+        - $ref: "#/components/parameters/AdminId"
+      responses:
+        "200":
+          description: Movie deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Movie"
+        "403":
+          $ref: "#/components/responses/AdminOnly"
+        "500":
+          description: Movie ID not found
           content:
             application/json:
               schema:
@@ -140,6 +167,7 @@ paths:
           description: New rating to assign to the movie
           schema:
             type: string
+        - $ref: "#/components/parameters/AdminId"
       responses:
         "200":
           description: Movie updated successfully
@@ -147,6 +175,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Movie"
+        "403":
+          $ref: "#/components/responses/AdminOnly"
         "500":
           description: Movie ID not found
           content:
@@ -163,6 +193,25 @@ components:
       description: Unique identifier of the movie
       schema:
         type: string
+
+    AdminId:
+      name: admin
+      in: query
+      required: true
+      description: Id of the user who makes the request, must be an admin (checked with the User service)
+      schema:
+        type: string
+        example: "michael_scott"
+
+  responses:
+    AdminOnly:
+      description: The user who makes the request is not an admin
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: admin only
 
   schemas:
     Movie:

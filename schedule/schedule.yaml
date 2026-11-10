@@ -46,9 +46,10 @@ paths:
           description: Date not found
 
     post:
-      summary: Add new schedule
+      summary: Add new schedule (admin)
       parameters:
         - $ref: "#/components/parameters/Date"
+        - $ref: "#/components/parameters/AdminId"
       requestBody:
         required: true
         content:
@@ -67,16 +68,21 @@ paths:
       responses:
         "201":
           description: Schedule added
+        "403":
+          description: Admin only
         "409":
           description: Date already exists
 
     delete:
-      summary: Delete schedule
+      summary: Delete schedule (admin)
       parameters:
         - $ref: "#/components/parameters/Date"
+        - $ref: "#/components/parameters/AdminId"
       responses:
         "200":
           description: Schedule deleted
+        "403":
+          description: Admin only
         "404":
           description: Date not found
 
@@ -113,6 +119,15 @@ components:
       schema:
         type: string
         example: "20151201"
+
+    AdminId:
+      name: admin
+      in: query
+      required: true
+      description: Id of the user who makes the request, must be an admin (checked with the user service)
+      schema:
+        type: string
+        example: "michael_scott"
 
   schemas:
 
